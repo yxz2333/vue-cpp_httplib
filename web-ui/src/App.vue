@@ -9,8 +9,8 @@
 import axios from 'axios'
 import { ref } from 'vue'
 
-const inputStr = ref("input")
-const backendRes = ref("output")
+const inputStr = ref("")
+const backendRes = ref("")
 
 const callBackend = () => {
   axios
