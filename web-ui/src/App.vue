@@ -1,7 +1,7 @@
 <template>
   <div>
     <input v-model="inputStr" placeholder="输入" @keyup.enter="callBackend">
-    <p v-if="backendRes">{{ backendRes }} </p>
+    <p v-if="backendRes">{{ backendRes[1]["name"] }} </p>
   </div>
 </template>
 
@@ -14,9 +14,10 @@ const backendRes = ref("")
 
 const callBackend = () => {
   axios
-    .post('http://localhost:8080/api/uppercase', inputStr.value)
+    .get('http://localhost:8080/api/ShowAllData')
     .then(response => {
       backendRes.value = response.data
+      console.log(response)
     })
     .catch(error => {
       console.error(error)

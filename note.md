@@ -230,3 +230,20 @@ _实际上感觉这么多请求只用一个 **post** 就行了_
 - **headers**：服务器的响应头。所有的 header 名称都是小写，可以使用方括号语法访问，例如：`response.headers['content-type']`。
 - **config**：`axios` 请求的配置信息。
 - **request**：生成此响应的请求。在 node.js 中，它是最后一个 `ClientRequest` 实例，在浏览器中则是 `XMLHttpRequest` 实例。
+
+<br>
+
+# nlohmann/json
+
+## dump 方法
+
+```cpp
+json.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace)
+```
+
+- 第一个参数是 **indent**，它控制了缩进的空格数。如果设置为-1，则表示不缩进，JSON 将作为单行字符串输出。
+- 第二个参数是 **indent_char**，它是用于缩进的字符。在这个例子中，使用的是空格字符 `' '` 。
+- 第三个参数是 **ensure_ascii**，它是一个布尔值。如果设置为 **false**，则允许非 ASCII 字符（如中文）在输出的 JSON 字符串中保持原样，而不是转换为 **Unicode** 转义序列。
+- 第四个参数是 **error_handler**，它定义了如何处理不符合 **UTF-8** 编码的字符。在这个例子中，使用的是 `nlohmann::json::error_handler_t::replace`，这意味着如果遇到无效的 UTF-8 序列，库将尝试替换或忽略它们，而不是抛出异常。
+
+所以，当调用 `json.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace); `时，将得到一个不缩进的 JSON 字符串，其中包含原始的中文字符，而不是它们的 Unicode 转义序列，且对于无效的 UTF-8 序列，库会尝试替换或忽略它们。
