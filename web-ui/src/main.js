@@ -1,5 +1,14 @@
 import { createApp } from 'vue'
-import './style.css'
 import App from './App.vue'
+import './css/style.css'
+import './api/Cursor/MouseCursor.css'
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+import router from './router.js'
 
-createApp(App).mount('#app')
+
+const app = createApp(App)
+
+app.use(router)
+app.use(ElementPlus)
+app.mount('#app')

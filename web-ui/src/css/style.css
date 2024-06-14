@@ -1,0 +1,91 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #57575710;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+.el-main {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* e1-card */
+.el-card {
+  display: flex;
+  border-radius: 10px !important;
+  box-shadow: 0 0 0px rgba(1, 1, 1, 0) !important;
+}
+
+.el-card:hover {
+  transform: translate(0, -3px);
+  box-shadow: 5px 5px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* card-fade  */
+.card-fade-enter-active {
+  transition: all 0.4s ease !important;
+}
+
+.card-fade-leave-active {
+  transition: all 0.4s ease !important;
+}
+
+.card-fade-enter-from,
+.card-fade-leave-to {
+  transform: translateY(30px);
+  opacity: 0;
+}
+
+
+
+/* slide */
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 1s ease-in-out;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(-100%) !important;
+  opacity: 0;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+}
+
+.el-row {
+  margin-bottom: 20px;
+}
+
+.UI {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

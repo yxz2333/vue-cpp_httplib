@@ -136,7 +136,7 @@ public:
 		cerr << "Warning：It is Goods" << endl;
 		return "";
 	}
-	
+
 
 	virtual void set_flavor(const FLAVOR& _flavor) {
 		cerr << "Warning：It is Goods" << endl;
@@ -146,7 +146,7 @@ public:
 		cerr << "Warning：It is Goods" << endl;
 		return "";
 	}
-	
+
 
 	virtual void set_power(const db& _power) {
 		cerr << "Warning：It is Goods" << endl;
@@ -255,7 +255,7 @@ public:
 	ostream& print(ostream& out) const override {
 		Goods::print(out);
 		out << "功率：" << get_power() << endl
-		    << "描述：" << get_detail() << endl;
+			<< "描述：" << get_detail() << endl;
 	}
 };
 
@@ -295,14 +295,12 @@ public:
 
 
 // Json 的 key
-const enum class CONFIG : int{
+const enum class CONFIG : int {
 	name,
 	type,
 	className,
 	price,
-	priceUnit,
 	stock,
-	stockUnit,
 	flavor,
 	power,
 	dose,
@@ -310,17 +308,15 @@ const enum class CONFIG : int{
 };
 
 string KEYS[] = {
-	"name",
-	"type",
+	"名称",
+	"类型",
 	"className",
-	"price",
-	"priceUnit",
-	"stock",
-	"stockUnit",
-	"flavor",
-	"power",
-	"dose",
-	"detail"
+	"价格",       // price + priceUnit
+	"存货量",     // stock + stockUnit
+	"味道",
+	"功率",
+	"服用说明",
+	"描述"
 };
 ////////////////
 
@@ -329,19 +325,67 @@ string KEYS[] = {
 
 vector<shared_ptr<Goods>>dataBase;
 
-
 int main()
 {
-	dataBase.push_back(make_shared<Goods>(new Foods("你妈",TYPE::meat,100,100,"个","个",FLAVOR::sour,"尼姆死了")));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+
+
 
 	Server svr;
 	svr.Get("/api/ShowAllData",
 		[&](const Request& req, Response& res) {
 			json data;
 
+			int id = 0;
+
 			for (shared_ptr<Goods> item : dataBase) {
-				data[1][KEYS[static_cast<int>(CONFIG::name)]] = item->get_name();
-				item->print(cout) << endl;
+				int now = 0; // 保证顺序正确
+
+				data[id][now++] = { KEYS[int(CONFIG::name)], item->get_name() };
+				data[id][now++] = { KEYS[int(CONFIG::type)], item->get_type() };
+				data[id][now++] = { KEYS[int(CONFIG::price)], item->get_price(), item->get_priceUnit() };
+				data[id][now++] = { KEYS[int(CONFIG::stock)], item->get_stock(), item->get_stockUnit() };
+
+				if (item->get_class_name() == ClassName[(int)CLASS_NAME::Foods]) {
+					data[id][now++] = { KEYS[(int)CONFIG::flavor], item->get_flavor() };
+				}
+
+				if (item->get_class_name() == ClassName[(int)CLASS_NAME::Medicines]) {
+					data[id][now++] = { KEYS[(int)CONFIG::dose], item->get_dose() };
+				}
+
+				if (item->get_class_name() == ClassName[(int)CLASS_NAME::ElectronicProduct]) {
+					data[id][now++] = { KEYS[(int)CONFIG::power], item->get_power() };
+				}
+
+				data[id][now++] = { KEYS[(int)CONFIG::detail], item->get_detail() };
+
+				id++;
+
+				//item->print(cout) << endl;
 			}
 
 
