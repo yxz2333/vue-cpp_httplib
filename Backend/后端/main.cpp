@@ -4,12 +4,16 @@
 #include<string>
 #include<vector>
 #include<unordered_map>
+#include<set>
 #include<map>
 #include<cmath>
 #include<algorithm>
 #include<memory>
+#include<Windows.h>
+#include <functional>
 
 #define HashMap unordered_map
+#define fa(i,op,n) for(int i=op;i<=n;i++)
 
 using namespace std;
 using namespace httplib;
@@ -19,21 +23,21 @@ using json = nlohmann::json;
 
 
 const enum class TYPE : int {
-	// Foods
+	// Foods(0 ~ 4)
 	fruits,
 	vegetables,
 	meat,
 	snacks,
 	drinks,
 
-	// Medicines
+	// Medicines(5)
 	medicines,
 
-	// DailyNecessities
+	// DailyNecessities(6 ~ 7)
 	stationery_office_supplies,
 	daily_necessities,
 
-	// ElectronicProduct
+	// ElectronicProduct(8)
 	electronic_product
 };
 
@@ -148,7 +152,7 @@ public:
 	}
 
 
-	virtual void set_power(const db& _power) {
+	virtual void set_power(const int& _power) {
 		cerr << "Warning：It is Goods" << endl;
 		return;
 	}
@@ -165,6 +169,7 @@ public:
 		cerr << "Warning：It is Goods" << endl;
 		return "";
 	}
+
 private:
 	db price, stock;
 	string priceUnit, stockUnit; // 价格单位，存货量单位
@@ -225,6 +230,7 @@ public:
 	ostream& print(ostream& out) const override {
 		Goods::print(out);
 		out << "描述：" << get_detail() << endl;
+		return out;
 	}
 };
 
@@ -238,16 +244,16 @@ class ElectronicProduct : public Goods {
 private:
 	CLASS_NAME className = CLASS_NAME::ElectronicProduct;
 
-	db power;
+	int power;
 	const string UNIT = "W";
 public:
 	ElectronicProduct(string _name, TYPE _type,
 		db _price, db _stock, string _priceUnit, string _stockUnit,
-		db _power,
+		int _power,
 		string _detail = "") :
 		Goods(_name, _type, _price, _stock, _priceUnit, _stockUnit, _detail), power(_power) {};
 
-	void set_power(const db& _power) override { power = _power; }
+	void set_power(const int& _power) override { power = _power; }
 	string get_power() const override { return to_string(power) + UNIT; }
 
 	string get_class_name() const override { return ClassName[static_cast<int>(className)]; }
@@ -256,6 +262,7 @@ public:
 		Goods::print(out);
 		out << "功率：" << get_power() << endl
 			<< "描述：" << get_detail() << endl;
+		return out;
 	}
 };
 
@@ -285,8 +292,9 @@ public:
 
 	ostream& print(ostream& out) const override {
 		Goods::print(out);
-		out << "服用说明：" << get_dose() << endl
+		out << "用量：" << get_dose() << endl
 			<< "描述：" << get_detail() << endl;
+		return out;
 	}
 };
 
@@ -298,14 +306,14 @@ public:
 const enum class CONFIG : int {
 	name,
 	type,
-	className,
+	className, // 2
 	price,
 	stock,
 	flavor,
 	power,
 	dose,
 	detail
-};
+}; // 0 ~ 8
 
 string KEYS[] = {
 	"名称",
@@ -315,88 +323,187 @@ string KEYS[] = {
 	"存货量",     // stock + stockUnit
 	"味道",
 	"功率",
-	"服用说明",
+	"用量",
 	"描述"
 };
 ////////////////
 
 
 
+ll dbKey = 1; // 数据id
+map<ll, shared_ptr<Goods>>dataBase;
 
-vector<shared_ptr<Goods>>dataBase;
+
+class API {
+private:
+	Server* svr;
+
+	vector<function<void(void)>> apis{
+
+
+		// 显示数据
+		[&](void)->void { 
+			svr->Options("/api/ShowData", [&](const Request& req, Response& res) {
+				//cout << "OPTIONS ACCESS" << endl;
+				res.status = 200;
+			});
+
+
+			svr->Post("/api/ShowData",
+				[&](const Request& req, Response& res) {
+
+					json reqData = json::parse(req.body);
+
+					int CN = reqData["_value"] - 1; // 前端请求显示的 ClassName 类别
+
+					json data;
+
+					int id = 0; // 第几个数据
+
+					cout << "前端查询了以下数据：" << endl << endl;
+
+					for (auto [_, item] : dataBase) {
+
+						if (item->get_class_name() != ClassName[CN] and CN != -2)continue;  // CN == -2 : 全部
+
+						int now = 0; // 保证顺序正确
+
+
+						data[id][now++] = { "id", _ };
+						data[id][now++] = { KEYS[int(CONFIG::name)], item->get_name() };
+						data[id][now++] = { KEYS[int(CONFIG::type)], item->get_type() };
+						data[id][now++] = { KEYS[int(CONFIG::price)], item->get_price(), item->get_priceUnit() };
+						data[id][now++] = { KEYS[int(CONFIG::stock)], item->get_stock(), item->get_stockUnit() };
+
+						if (item->get_class_name() == ClassName[(int)CLASS_NAME::Foods]) {
+							data[id][now++] = { KEYS[(int)CONFIG::flavor], item->get_flavor() };
+						}
+
+						if (item->get_class_name() == ClassName[(int)CLASS_NAME::Medicines]) {
+							data[id][now++] = { KEYS[(int)CONFIG::dose], item->get_dose() };
+						}
+
+						if (item->get_class_name() == ClassName[(int)CLASS_NAME::ElectronicProduct]) {
+							data[id][now++] = { KEYS[(int)CONFIG::power], item->get_power() };
+						}
+
+						data[id][now++] = { KEYS[(int)CONFIG::detail], item->get_detail() };
+
+						id++;
+
+						item->print(cout) << endl;
+					}
+
+					string a = data.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
+					res.set_content(a, "application/json; charset=utf-8");
+				});
+
+		},
+
+
+		// 删除数据
+		[&](void)->void { 
+			svr->Options("/api/DeleteData", [&](const Request& req, Response& res) {
+				//cout << "OPTIONS ACCESS" << endl;
+				res.status = 200;
+			});
+
+
+			svr->Post("/api/DeleteData", [&](const Request& req, Response& res) {
+
+				json reqData = json::parse(req.body);
+
+				cout << "前端删除了以下数据：" << endl << endl;
+
+				for (int i : reqData["id"]) {
+					dataBase[i]->print(cout) << endl;
+
+					dataBase.erase(i);
+				}
+			});
+		},
+
+
+		// 导入数据
+		[&](void)->void {
+			svr->Options("/api/ImportData", [&](const Request& req, Response& res) {
+				//cout << "OPTIONS ACCESS" << endl;
+				res.status = 200;
+			});
+
+
+			svr->Post("/api/ImportData", [&](const Request& req, Response& res) {
+
+				json reqData = json::parse(req.body);
+
+				int type = reqData["type"]; // 类型
+
+				string name = reqData["name"];
+				db price = reqData["price"];
+				db stock = reqData["stock"];
+				string priceUnit = reqData["priceUnit"];
+				string stockUnit = reqData["stockUnit"];
+				string detail = reqData["detail"];
+
+				cout << "前端导入了以下数据：" << endl << endl;
+
+				if (type >= 1 and type <= 5) {
+					FLAVOR flavor = FLAVOR(reqData["flavor"] - 1);
+					dataBase[dbKey] = make_shared<Foods>(Foods(name, (TYPE)type, price, stock, priceUnit, stockUnit, flavor, detail));
+				}
+				else if (type == 6) {
+					int dose = reqData["dose"];
+					dataBase[dbKey] = make_shared<Medicines>(Medicines(name, (TYPE)type, price, stock, priceUnit, stockUnit, dose, detail));
+				}
+				else if (type >= 7 and type <= 8) {
+					dataBase[dbKey] = make_shared<DailyNecessities>(DailyNecessities(name, (TYPE)type, price, stock, priceUnit, stockUnit, detail));
+				}
+				else if (type == 9) {
+					int power = reqData["power"];
+					dataBase[dbKey] = make_shared<ElectronicProduct>(ElectronicProduct(name, (TYPE)type, price, stock, priceUnit, stockUnit, power, detail));
+				}
+
+				dbKey++;
+
+				dataBase[dbKey - 1]->print(cout) << endl;
+			});
+		},
+	};
+
+public:
+	API(Server* svr) :svr(svr) {};
+
+	void all_start() {
+		for (auto& api : apis)
+			api();
+	}
+};
+
+
 
 int main()
 {
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
-	dataBase.push_back(make_shared<Foods>("你妈", TYPE::meat, 100, 100, "元/个", "个", FLAVOR::sour, "尼姆死了"));
+	SetConsoleOutputCP(CP_UTF8);
 
+	dataBase[dbKey++] = make_shared<Foods>("猪肉", TYPE::meat, 15, 100, "元/斤", "斤", FLAVOR::sour, "新鲜猪里脊");
+	dataBase[dbKey++] = make_shared<DailyNecessities>("笔", TYPE::daily_necessities, 1, 100, "元/支", "支", "黑色笔");
+	dataBase[dbKey++] = make_shared<ElectronicProduct>("电水壶", TYPE::electronic_product, 100, 100, "元/个", "个", 100, "烧热水的");
 
 
 	Server svr;
-	svr.Get("/api/ShowAllData",
-		[&](const Request& req, Response& res) {
-			json data;
+	Server* svrPtr = &svr;
 
-			int id = 0;
-
-			for (shared_ptr<Goods> item : dataBase) {
-				int now = 0; // 保证顺序正确
-
-				data[id][now++] = { KEYS[int(CONFIG::name)], item->get_name() };
-				data[id][now++] = { KEYS[int(CONFIG::type)], item->get_type() };
-				data[id][now++] = { KEYS[int(CONFIG::price)], item->get_price(), item->get_priceUnit() };
-				data[id][now++] = { KEYS[int(CONFIG::stock)], item->get_stock(), item->get_stockUnit() };
-
-				if (item->get_class_name() == ClassName[(int)CLASS_NAME::Foods]) {
-					data[id][now++] = { KEYS[(int)CONFIG::flavor], item->get_flavor() };
-				}
-
-				if (item->get_class_name() == ClassName[(int)CLASS_NAME::Medicines]) {
-					data[id][now++] = { KEYS[(int)CONFIG::dose], item->get_dose() };
-				}
-
-				if (item->get_class_name() == ClassName[(int)CLASS_NAME::ElectronicProduct]) {
-					data[id][now++] = { KEYS[(int)CONFIG::power], item->get_power() };
-				}
-
-				data[id][now++] = { KEYS[(int)CONFIG::detail], item->get_detail() };
-
-				id++;
-
-				//item->print(cout) << endl;
-			}
-
-
-			res.set_header("Access-Control-Allow-Origin", "*");
-			res.set_header("Content-Type", "application/json; charset=utf-8");
-
-			string a = data.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
-			res.set_content(a, "application/json; charset=utf-8");
+	svr.set_default_headers({  // 设置头部
+		{ "Access-Control-Allow-Origin", "*" },
+		{ "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS" },
+		{ "Access-Control-Allow-Headers", "*" },
+		{ "Access-Control-Max-Age", "3600" },
+		{ "Content-Type", "application/json;charset=utf-8" }
 		});
 
 
+	API api(svrPtr);
+	api.all_start();
 
 	svr.listen("localhost", 8080);
 

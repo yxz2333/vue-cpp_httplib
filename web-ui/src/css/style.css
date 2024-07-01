@@ -56,7 +56,7 @@ h1 {
 .card-fade-enter-from,
 .card-fade-leave-to {
   transform: translateY(30px);
-  opacity: 0;
+  opacity: 0 !important;
 }
 
 
@@ -70,7 +70,7 @@ h1 {
 .slide-enter-from,
 .slide-leave-to {
   transform: translateX(-100%) !important;
-  opacity: 0;
+  opacity: 0 !important;
 }
 
 @media (prefers-color-scheme: light) {

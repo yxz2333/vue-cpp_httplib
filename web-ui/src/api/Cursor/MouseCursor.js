@@ -6,6 +6,7 @@ export class Cursor {
         this.create();
         this.init();
         this.render();
+        // 这个地方有时间重写一下
         this.pt = { 'a': null, 'button': null };       // hover的tag属性，被什么父节点的类属性包裹
         for (let key in dict) this.pt[key] = dict[key];
     }
